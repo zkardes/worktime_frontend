@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const RegisterPage = (props) => {
   const [email, setEmail] = useState("");
@@ -89,6 +90,11 @@ const RegisterPage = (props) => {
           onClick={onButtonClick}
           value={"Registrieren"}
         />
+      </div>
+      <div className="mt-3">
+        <Link to="/login" className="btn btn-secondary">
+          Already have an account? Login
+        </Link>
       </div>
     </div>
   );

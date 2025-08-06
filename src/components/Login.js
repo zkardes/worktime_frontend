@@ -3,52 +3,21 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../api";
 
 const Login = ({ setLoggedIn, setEmail, setUserRole }) => {
-  const [credentials, setCredentials] = useState({
-    email: "",
-    password: "",
-  });
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
-    // Clear errors when user starts typing
-    if (e.target.name === "email") setEmailError("");
-    if (e.target.name === "password") setPasswordError("");
-  };
-
-  const validateForm = () => {
-    let isValid = true;
-
-    // Email validation
-    if (!credentials.email) {
-      setEmailError("Please enter your email");
-      isValid = false;
-    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(credentials.email)) {
-      setEmailError("Please enter a valid email");
-      isValid = false;
-    }
-
-    // Password validation
-    if (!credentials.password) {
-      setPasswordError("Please enter a password");
-      isValid = false;
-    } else if (credentials.password.length < 7) {
-      setPasswordError("The password must be 8 characters or longer");
-      isValid = false;
-    }
-
-    return isValid;
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
-
     setIsLoading(true);
+    setError("");
 
     try {
       const response = await api.post("/auth/login", credentials);
@@ -63,15 +32,18 @@ const Login = ({ setLoggedIn, setEmail, setUserRole }) => {
       setEmail(credentials.email);
       setUserRole(response.data.role);
 
-      // Navigate to dashboard page
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Login error:", error);
-      if (error.response?.status === 401) {
-        setPasswordError("Invalid email or password");
+      // Navigate based on role
+      if (response.data.role === "ADMIN") {
+        navigate("/admin");
       } else {
-        setPasswordError("An error occurred. Please try again.");
+        navigate("/");
       }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Login failed. Please check your credentials and try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +58,15 @@ const Login = ({ setLoggedIn, setEmail, setUserRole }) => {
           </h2>
         </div>
 
+        {error && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -93,41 +74,28 @@ const Login = ({ setLoggedIn, setEmail, setUserRole }) => {
                 Email
               </label>
               <input
-                id="email"
-                name="email"
                 type="email"
+                name="email"
                 required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  emailError ? "border-red-300" : "border-gray-300"
-                } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={credentials.email}
                 onChange={handleChange}
               />
-              {emailError && (
-                <p className="mt-2 text-sm text-red-600">{emailError}</p>
-              )}
             </div>
-
             <div>
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
               <input
-                id="password"
-                name="password"
                 type="password"
+                name="password"
                 required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  passwordError ? "border-red-300" : "border-gray-300"
-                } placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={credentials.password}
                 onChange={handleChange}
               />
-              {passwordError && (
-                <p className="mt-2 text-sm text-red-600">{passwordError}</p>
-              )}
             </div>
           </div>
 
@@ -144,7 +112,7 @@ const Login = ({ setLoggedIn, setEmail, setUserRole }) => {
           </div>
         </form>
 
-        <div className="text-center">
+        <div className="text-center mt-4">
           <Link
             to="/register"
             className="font-medium text-indigo-600 hover:text-indigo-500"
